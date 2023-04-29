@@ -111,13 +111,13 @@ def load_chest_data(args):
 def load_chest_models():
     # Load predictors
     args = Hparams()
-    args.predictor_path = 'src/chest_xray/checkpoints/a_r_s_f/mimic_classifier_resnet18_l2_slurm/checkpoint.pt'
+    args.predictor_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/mimic_classifier_resnet18_l2_slurm/checkpoint.pt'
     predictor_checkpoint = torch.load(args.predictor_path)
     args.update(predictor_checkpoint['hparams'])
     predictor = FlowPGM(args)
     
     # Load PGM
-    args.pgm_path = 'src/chest_xray/checkpoints/a_r_s_f/sup_pgm_mimic/checkpoint.pt'
+    args.pgm_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/sup_pgm_mimic/checkpoint.pt'
     # print(f'\nLoading PGM checkpoint: {args.pgm_path}')
     pgm_checkpoint = torch.load(args.pgm_path)
     pgm_args = Hparams()
@@ -125,7 +125,7 @@ def load_chest_models():
     pgm = FlowPGM(pgm_args)
     # pgm.load_state_dict(pgm_checkpoint['ema_model_state_dict'])
 
-    args.vae_path = 'src/chest_xray/checkpoints/a_r_s_f/mimic_beta9_gelu_dgauss_1_lr3/checkpoint.pt'
+    args.vae_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/mimic_beta9_gelu_dgauss_1_lr3/checkpoint.pt'
 
     # print(f'\nLoading VAE checkpoint: {args.vae_path}')
     vae_checkpoint = torch.load(args.vae_path)
@@ -139,7 +139,7 @@ def load_chest_models():
     # dscm_dir = "mimic_more_dscm_lr_1e5_lagrange_lr_1_damping_10"
 
     which_checkpoint="6500_checkpoint"
-    args.load_path = f'src/chest_xray/checkpoints/a_r_s_f/{dscm_dir}/{which_checkpoint}.pt'
+    args.load_path = f'/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/{dscm_dir}/{which_checkpoint}.pt'
     # print(args.load_path)
     dscm_checkpoint = torch.load(args.load_path)
     args.update(dscm_checkpoint['hparams'])

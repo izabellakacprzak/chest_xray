@@ -5,13 +5,31 @@ from dscmchest.functions_for_gradio import load_chest_models
 
 model, _, _ = load_chest_models()
 
+def norm(batch):
+    for k, v in batch.items():
+            batch[k] = torch.tensor(v)
+    for k, v in batch.items():
+        if k == 'x':
+            batch['x'] = (batch['x'].float() - 127.5) / 127.5  # [-1,1]
+        elif k in ['age']:
+            batch[k] = batch[k].float().unsqueeze(-1)
+            batch[k] = batch[k] / 100.
+            batch[k] = batch[k] * 2 - 1  # [-1,1]
+        elif k in ['race']:
+            batch[k] = F.one_hot(batch[k], num_classes=3).squeeze().float()
+        elif k in ['finding']:
+            batch[k] = batch[k].unsqueeze(-1).float()
+        else:
+            batch[k] = batch[k].float().unsqueeze(-1)
+    return batch
+
 def postprocess(x):
     return ((x + 1.0) * 127.5).detach().cpu().numpy()
     
 def generate_cf(obs, do_s=None, do_r=None, do_a=None):
-    original_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'label':obs['label']}
-    cf_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'label':obs['label']}
-
+    original_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'finding':obs['finding']}
+    cf_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'finding':obs['finding']}
+    obs = norm(obs)
     n_particles = 32 # Number of particles
     
     for k, v in obs.items():
@@ -38,13 +56,13 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
     # generate counterfactual
     out = model.forward(obs, do_pa, cf_particles=1)
     x_cf = postprocess(out['cfs']['x']).mean(0).squeeze()
-    print(type(x_cf))
     return x_cf, cf_metrics
 
 def generate_cfs(data, do_s=None, do_a=None, do_r=None):
     cfs = []
     cfs_metrics = []
-    for sample in data:
+    for idx in range(len(data['x'])):
+        sample = {k: v[idx] for k, v in data.items()}
         cf, cf_metrics = generate_cf(obs=sample, do_s=do_s, do_a=do_a, do_r=do_r)
         cfs.append(cf)
         cfs_metrics.append(cf_metrics)
