@@ -5,9 +5,9 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
-from utils import seed_worker, linear_warmup
-from chexpert import CheXpertDataset
-from mimic import MimicDataset
+from dscmchest.utils import seed_worker, linear_warmup
+from dscmchest.chexpert import CheXpertDataset
+from dscmchest.mimic import MimicDataset
 import argparse
 
 def setup_dataloaders(args):

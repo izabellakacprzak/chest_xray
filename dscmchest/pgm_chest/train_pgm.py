@@ -1,7 +1,7 @@
 import sys
 sys.path.append('..')
-from train_setup import *
-from utils import seed_all, seed_worker, EMA
+from dscm.train_setup import *
+from dscmchest.utils import seed_all, seed_worker, EMA
 import os
 import copy
 import argparse
@@ -16,10 +16,10 @@ from pyro.infer import config_enumerate
 from sklearn.metrics import roc_auc_score
 
 # from flow_pgm import FlowPGM_without_finding as FlowPGM
-from flow_pgm import FlowPGM
+from dscmchest.pgm_chest.flow_pgm import FlowPGM
 # from flow_pgm import FlowPGM_full as FlowPGM
-from utils_pgm import update_stats, calculate_loss
-from layers import TraceStorage_ELBO
+from dscmchest.pgm_chest.utils_pgm import update_stats, calculate_loss
+from dscmchest.pgm_chest.layers import TraceStorage_ELBO
 
 
 def preprocess(batch):

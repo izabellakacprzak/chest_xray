@@ -8,8 +8,8 @@ import pyro.distributions.transforms as T
 import numpy as np
 from pyro.nn import DenseNN
 from pyro.infer.reparam.transform import TransformReparam
-from layers import ConditionalTransformedDistributionGumbelMax, ConditionalGumbelMax, CNN
-from resnet import ResNets_custom
+from dscmchest.pgm_chest.layers import ConditionalTransformedDistributionGumbelMax, ConditionalGumbelMax, CNN
+from dscmchest.pgm_chest.resnet import ResNets_custom
 
 
 class FlowPGM(nn.Module):

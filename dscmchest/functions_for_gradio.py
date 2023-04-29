@@ -4,21 +4,21 @@ sys.path.append(os.path.join(sys.path[0],'pgm_chest'))
 import torch
 from torch.utils.data import DataLoader
 import torchvision
-from mimic import MimicDataset
+from dscmchest.mimic import MimicDataset
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, accuracy_score
 import torch.nn.functional as F
-from train_setup import setup_directories, setup_tensorboard, setup_logging
+from dscm.train_setup import setup_directories, setup_tensorboard, setup_logging
 # From datasets import get_attr_max_min
-from utils import EMA, seed_all
+from dscmchest.utils import EMA, seed_all
 from matplotlib.ticker import LinearLocator
-from vae_chest import HVAE
-from pgm_chest.layers import TraceStorage_ELBO
-from pgm_chest.flow_pgm import FlowPGM
-from pgm_chest.dscm import DSCM
+from dscmchest.vae_chest import HVAE
+from dscmchest.pgm_chest.layers import TraceStorage_ELBO
+from dscmchest.pgm_chest.flow_pgm import FlowPGM
+from dscmchest.pgm_chest.dscm import DSCM
 from PIL import Image
 from matplotlib import colors, patches
 from matplotlib import rc
@@ -26,7 +26,6 @@ rc('font', **{'family': 'serif', 'serif': ['Roman']})
 rc('text', usetex=True)
 rc('image', interpolation='none')
 rc('text.latex', preamble=r'\usepackage{amsmath} \usepackage{amssymb} \usepackage{fontawesome5} \usepackage{graphics}')
-import gradio as gr
 import networkx as nx
 import matplotlib.pyplot as plt
 # cwd = os.getcwd()

@@ -11,17 +11,17 @@ from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 import numpy as np
 sys.path.append('..')
-from train_setup import setup_directories, setup_tensorboard, setup_logging
+from dscmchest.train_setup import setup_directories, setup_tensorboard, setup_logging
 # From datasets import get_attr_max_min
-from utils import EMA, seed_all
-from vae_chest import HVAE
+from dscmchest.utils import EMA, seed_all
+from dscmchest.vae_chest import HVAE
 import torch.nn.functional as F
-from train_pgm import sup_epoch, eval_epoch
-from utils_pgm import check_nan, update_stats, calculate_loss
+from dscmchest.pgm_chest.train_pgm import sup_epoch, eval_epoch
+from dscmchest.pgm_chest.utils_pgm import check_nan, update_stats, calculate_loss
 # from utils_pgm import plot_cf_with_original_model as plot_cf
-from utils_pgm import plot_cf
-from layers import TraceStorage_ELBO
-from flow_pgm import FlowPGM
+from dscmchest.pgm_chest.utils_pgm import plot_cf
+from dscmchest.pgm_chest.layers import TraceStorage_ELBO
+from dscmchest.pgm_chest.flow_pgm import FlowPGM
 # from flow_pgm import FlowPGM_full as FlowPGM
 
 def norm(batch):
