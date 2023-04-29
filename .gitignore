@@ -1,2 +1,5 @@
 checkpoints/
 __pycache__/
+build/
+dist/
+dscmchest.egg-info/
