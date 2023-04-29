@@ -61,8 +61,8 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
 def generate_cfs(data, do_s=None, do_a=None, do_r=None):
     cfs = []
     cfs_metrics = []
-    for idx in range(len(data['x'])):
-        sample = {k: v[idx] for k, v in data.items()}
+    for image, metrics, target in data:
+        sample = {'x':image, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
         cf, cf_metrics = generate_cf(obs=sample, do_s=do_s, do_a=do_a, do_r=do_r)
         cfs.append(cf)
         cfs_metrics.append(cf_metrics)
