@@ -1,13 +1,13 @@
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 from dscmchest.functions_for_gradio import load_chest_models
 
 model, _, _ = load_chest_models()
 
 def norm(batch):
-    for k, v in batch.items():
-            batch[k] = torch.tensor(v)
     for k, v in batch.items():
         if k == 'x':
             batch['x'] = (batch['x'].float() - 127.5) / 127.5  # [-1,1]
@@ -27,11 +27,12 @@ def postprocess(x):
     return ((x + 1.0) * 127.5).detach().cpu().numpy()
     
 def generate_cf(obs, do_s=None, do_r=None, do_a=None):
-    original_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'finding':obs['finding']}
-    cf_metrics = {'sex':obs['sex'], 'age':obs['age'], 'race':obs['race'], 'finding':obs['finding']}
+    do_inter = False
+    original_metrics = {'sex':obs['sex'].item(), 'age':obs['age'].item(), 'race':obs['race'].item(), 'finding':obs['finding'].item()}
+    cf_metrics = original_metrics.copy()
     obs = norm(obs)
     n_particles = 32 # Number of particles
-    
+   
     for k, v in obs.items():
         obs[k] = v.cuda().float()
         if n_particles > 1:
@@ -41,29 +42,39 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
     do_pa = {}
     with torch.no_grad():
         if do_s and original_metrics['sex'] != do_s:
+            do_inter = True
             do_pa['sex'] = torch.tensor(do_s).view(1, 1)
             cf_metrics['sex'] = do_s
         # if do_f:
         #     do_pa['finding'] = torch.tensor(do_s).view(1, 1)
         if do_r and original_metrics['race'] != do_r:
+            do_inter = True
             do_pa['race'] = F.one_hot(torch.tensor(do_r), num_classes=3).view(1, 3)
             cf_metrics['race'] = do_r
         if do_a and original_metrics['age'] != do_a:
+            do_inter = True
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
             cf_metrics['age'] = do_a
+    if not do_inter:
+        return None, {}
+
     for k, v in do_pa.items():
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
     # generate counterfactual
     out = model.forward(obs, do_pa, cf_particles=1)
-    x_cf = postprocess(out['cfs']['x']).mean(0).squeeze()
+    x_cf = postprocess(out['cfs']['x']).mean(0)
     return x_cf, cf_metrics
 
 def generate_cfs(data, do_s=None, do_a=None, do_r=None):
     cfs = []
     cfs_metrics = []
-    for image, metrics, target in data:
-        sample = {'x':image, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
+    dataloader = DataLoader(data, batch_size=1, shuffle=False)
+    for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
+        sample = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
         cf, cf_metrics = generate_cf(obs=sample, do_s=do_s, do_a=do_a, do_r=do_r)
+        
+        if len(cf_metrics)==0:
+            continue
         cfs.append(cf)
         cfs_metrics.append(cf_metrics)
 
