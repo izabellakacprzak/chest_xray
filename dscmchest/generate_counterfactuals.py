@@ -65,7 +65,8 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
     x_cf = postprocess(out['cfs']['x']).mean(0)
     return x_cf, cf_metrics
 
-def generate_cfs(data, do_s=None, do_a=None, do_r=None):
+def generate_cfs(data, amount, do_s=None, do_a=None, do_r=None):
+    count = 0
     cfs = []
     cfs_metrics = []
     dataloader = DataLoader(data, batch_size=1, shuffle=False)
@@ -75,7 +76,12 @@ def generate_cfs(data, do_s=None, do_a=None, do_r=None):
         
         if len(cf_metrics)==0:
             continue
+        
         cfs.append(cf)
         cfs_metrics.append(cf_metrics)
+
+        count += 1
+        if count >= amount:
+            return cfs, cfs_metrics
 
     return cfs, cfs_metrics
