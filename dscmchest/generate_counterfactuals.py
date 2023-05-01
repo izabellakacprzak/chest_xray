@@ -77,7 +77,7 @@ def generate_cfs(data, amount, do_s=None, do_a=None, do_r=None):
         if len(cf_metrics)==0:
             continue
         
-        cfs.append(cf)
+        cfs.append((cf))
         cfs_metrics.append(cf_metrics)
 
         count += 1
