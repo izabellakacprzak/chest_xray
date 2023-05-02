@@ -69,12 +69,9 @@ def generate_cfs(data, amount, do_s=None, do_a=None, do_r=None):
     count = 0
     cfs = []
     cfs_metrics = []
-    for idx in tqdm(range(len(data['x']))):
-        sample = {'x':data['x'][idx],
-                  'sex':data['sex'][idx],
-                  'age':data['age'][idx],
-                  'race':data['race'][idx],
-                  'finding':data['finding'][idx]}
+    dataloader = DataLoader(data, batch_size=1, shuffle=False)
+    for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
+        sample = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
         cf, cf_metrics = generate_cf(obs=sample, do_s=do_s, do_a=do_a, do_r=do_r)
         
         if len(cf_metrics)==0:
