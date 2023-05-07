@@ -53,6 +53,9 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
             cf_metrics['race'] = do_r
         if do_a and original_metrics['age'] != do_a:
             do_inter = True
+
+            # convert age ranges to actual values
+            do_a = random.randint(do_a*20, do_a*20+19)
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
             cf_metrics['age'] = do_a
     #if not do_inter:
