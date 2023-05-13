@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-import random
 
 from dscmchest.functions_for_gradio import load_chest_models
 
