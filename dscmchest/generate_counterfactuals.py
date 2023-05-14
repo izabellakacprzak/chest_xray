@@ -59,11 +59,13 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
             do_a = random.randint(do_a*20, do_a*20+19)
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
             cf_metrics['age'] = do_a
-    #if not do_inter:
-    #    return None, {}
+
+    if not do_inter:
+       return None, {}
 
     for k, v in do_pa.items():
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
+        
     # generate counterfactual
     out = model.forward(obs, do_pa, cf_particles=1)
     x_cf = postprocess(out['cfs']['x']).mean(0)
