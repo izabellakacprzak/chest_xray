@@ -27,7 +27,7 @@ def norm(batch):
 def postprocess(x):
     return ((x + 1.0) * 127.5).detach().cpu().numpy()
     
-def generate_cf(obs, do_a=None, do_r=None, do_s=None):
+def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     do_inter = False
     original_metrics = {'sex':obs['sex'].item(), 'age':obs['age'].item(), 'race':obs['race'].item(), 'finding':obs['finding'].item()}
     cf_metrics = original_metrics.copy()
@@ -42,17 +42,19 @@ def generate_cf(obs, do_a=None, do_r=None, do_s=None):
     # get founterfactual pa
     do_pa = {}
     with torch.no_grad():
-        if do_s!=None and original_metrics['sex'] != do_s:
+        if do_s != None and original_metrics['sex'] != do_s:
             do_inter = True
             do_pa['sex'] = torch.tensor(do_s).view(1, 1)
             cf_metrics['sex'] = do_s
-        # if do_f:
-        #     do_pa['finding'] = torch.tensor(do_s).view(1, 1)
-        if do_r!=None and original_metrics['race'] != do_r:
+        if do_f != None and original_metrics['finding'] != do_f:
+            do_inter = True
+            do_pa['finding'] = torch.tensor(do_s).view(1, 1)
+            cf_metrics['finding'] = do_f
+        if do_r != None and original_metrics['race'] != do_r:
             do_inter = True
             do_pa['race'] = F.one_hot(torch.tensor(do_r), num_classes=3).view(1, 3)
             cf_metrics['race'] = do_r
-        if do_a!=None and not (do_a*20<=(original_metrics['age'])<=do_a*20+19):
+        if do_a != None and not (do_a*20<=(original_metrics['age'])<=do_a*20+19):
             do_inter = True
             # convert age ranges to actual values
             do_a = random.randint(do_a*20, do_a*20+19)
@@ -70,14 +72,14 @@ def generate_cf(obs, do_a=None, do_r=None, do_s=None):
     x_cf = postprocess(out['cfs']['x']).mean(0)
     return x_cf, cf_metrics
 
-def generate_cfs(data, amount, do_s=None, do_a=None, do_r=None):
+def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
     count = 0
     cfs = []
     cfs_metrics = []
     dataloader = DataLoader(data, batch_size=1, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         sample = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
-        cf, cf_metrics = generate_cf(obs=sample, do_a=do_a, do_r=do_r, do_s=do_s)
+        cf, cf_metrics = generate_cf(obs=sample, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
         
         if len(cf_metrics)==0:
             continue
