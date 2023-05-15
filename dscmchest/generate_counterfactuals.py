@@ -48,7 +48,7 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
             cf_metrics['sex'] = do_s
         if do_f != None and original_metrics['finding'] != do_f:
             do_inter = True
-            do_pa['finding'] = torch.tensor(do_s).view(1, 1)
+            do_pa['finding'] = torch.tensor(do_f).view(1, 1)
             cf_metrics['finding'] = do_f
         if do_r != None and original_metrics['race'] != do_r:
             do_inter = True
