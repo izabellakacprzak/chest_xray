@@ -52,9 +52,8 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
             do_inter = True
             do_pa['race'] = F.one_hot(torch.tensor(do_r), num_classes=3).view(1, 3)
             cf_metrics['race'] = do_r
-        if do_a and original_metrics['age'] != do_a:
+        if do_a and not (do_a*20<=(original_metrics['age'])<=do_a*20+19):
             do_inter = True
-
             # convert age ranges to actual values
             do_a = random.randint(do_a*20, do_a*20+19)
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
@@ -65,7 +64,7 @@ def generate_cf(obs, do_s=None, do_r=None, do_a=None):
 
     for k, v in do_pa.items():
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
-        
+
     # generate counterfactual
     out = model.forward(obs, do_pa, cf_particles=1)
     x_cf = postprocess(out['cfs']['x']).mean(0)
