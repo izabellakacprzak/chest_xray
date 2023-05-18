@@ -60,26 +60,28 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     return x_cf
 
 def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     count = 0
     cfs = []
     cfs_metrics = []
     dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
+        cf_metrics = metrics.copy()
+        if do_s != None and metrics['sex'][0] != do_s:
+            cf_metrics['sex'] = [do_s for _ in range(BATCH_SIZE)]
+        elif do_f != None and target[0] != do_f:
+            cf_metrics['finding'] = [do_f for _ in range(BATCH_SIZE)]
+        elif do_r != None and metrics['race'][0] != do_r:
+            cf_metrics['race'] = [do_r for _ in range(BATCH_SIZE)]
+        elif do_a != None and (20*do_a<=metrics['age'][0]<=(20*do_a+19)):
+            cf_metrics['age'] = [do_a for _ in range(BATCH_SIZE)]
+        else:
+            continue
+
         cf = generate_cf(obs=obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
 
         cfs.append(cf)
-        cf_metrics = metrics.copy()
-        if do_s != None:
-            cf_metrics['sex'] = [do_s for _ in range(BATCH_SIZE)]
-        if do_f != None:
-            cf_metrics['finding'] = [do_f for _ in range(BATCH_SIZE)]
-        if do_r != None:
-            cf_metrics['race'] = [do_r for _ in range(BATCH_SIZE)]
-        if do_a != None:
-            cf_metrics['age'] = [do_a for _ in range(BATCH_SIZE)]
-
         cfs_metrics.append(cf_metrics)
 
         count += BATCH_SIZE
