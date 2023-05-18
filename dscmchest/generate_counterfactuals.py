@@ -76,10 +76,10 @@ def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
     count = 0
     cfs = []
     cfs_metrics = []
-    dataloader = DataLoader(data, batch_size=1, shuffle=False)
+    dataloader = DataLoader(data, batch_size=32, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
-        sample = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
-        cf, cf_metrics = generate_cf(obs=sample, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
+        obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
+        cf, cf_metrics = generate_cf(obs=obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
         
         if len(cf_metrics)==0:
             continue
