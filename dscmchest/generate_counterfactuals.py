@@ -47,8 +47,6 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
         if do_r != None:
             do_pa['race'] = F.one_hot(torch.tensor(do_r), num_classes=3).view(1, 3)
         if do_a != None:
-            # convert age ranges to actual values
-            do_a = random.randint(do_a*20, do_a*20+19)
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
 
     for k, v in do_pa.items():
@@ -67,15 +65,16 @@ def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
     dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
-        cf_metrics = metrics.copy()
+        cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(), 'race':metrics['race'].item(), 'finding':target[0].item()}
         if do_s != None and metrics['sex'][0] != do_s:
-            cf_metrics['sex'] = [do_s for _ in range(BATCH_SIZE)]
+            cf_metrics['sex'] = do_s
         elif do_f != None and target[0] != do_f:
-            cf_metrics['finding'] = [do_f for _ in range(BATCH_SIZE)]
+            cf_metrics['finding'] = do_f
         elif do_r != None and metrics['race'][0] != do_r:
-            cf_metrics['race'] = [do_r for _ in range(BATCH_SIZE)]
-        elif do_a != None and (20*do_a<=metrics['age'][0]<=(20*do_a+19)):
-            cf_metrics['age'] = [do_a for _ in range(BATCH_SIZE)]
+            cf_metrics['race'] = do_r
+        elif do_a != None and not (20*do_a<=metrics['age'][0]<=(20*do_a+19)):
+            do_a = random.randint(do_a*20, do_a*20+19)
+            cf_metrics['age'] = do_a
         else:
             continue
 
