@@ -28,9 +28,6 @@ def postprocess(x):
     return ((x + 1.0) * 127.5).detach().cpu().numpy()
     
 def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
-    do_inter = False
-    original_metrics = {'sex':obs['sex'].item(), 'age':obs['age'].item(), 'race':obs['race'].item(), 'finding':obs['finding'].item()}
-    cf_metrics = original_metrics.copy()
     obs = norm(obs)
     n_particles = 32 # Number of particles
    
@@ -39,30 +36,20 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
         if n_particles > 1:
             ndims = (1,)*3 if k == 'x' else (1,)
             obs[k] = obs[k].repeat(n_particles, *ndims)
+
     # get founterfactual pa
     do_pa = {}
     with torch.no_grad():
-        if do_s != None and original_metrics['sex'] != do_s:
-            do_inter = True
+        if do_s != None:
             do_pa['sex'] = torch.tensor(do_s).view(1, 1)
-            cf_metrics['sex'] = do_s
-        if do_f != None and original_metrics['finding'] != do_f:
-            do_inter = True
+        if do_f != None:
             do_pa['finding'] = torch.tensor(do_f).view(1, 1)
-            cf_metrics['finding'] = do_f
-        if do_r != None and original_metrics['race'] != do_r:
-            do_inter = True
+        if do_r != None:
             do_pa['race'] = F.one_hot(torch.tensor(do_r), num_classes=3).view(1, 3)
-            cf_metrics['race'] = do_r
-        if do_a != None and not (do_a*20<=(original_metrics['age'])<=do_a*20+19):
-            do_inter = True
+        if do_a != None:
             # convert age ranges to actual values
             do_a = random.randint(do_a*20, do_a*20+19)
             do_pa['age'] = torch.tensor(do_a/100*2-1).view(1,1)
-            cf_metrics['age'] = do_a
-
-    if not do_inter:
-       return None, {}
 
     for k, v in do_pa.items():
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
@@ -70,24 +57,32 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     # generate counterfactual
     out = model.forward(obs, do_pa, cf_particles=1)
     x_cf = postprocess(out['cfs']['x']).mean(0)
-    return x_cf, cf_metrics
+    return x_cf
 
 def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
+    BATCH_SIZE = 32
     count = 0
     cfs = []
     cfs_metrics = []
-    dataloader = DataLoader(data, batch_size=32, shuffle=False)
+    dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
-        cf, cf_metrics = generate_cf(obs=obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
-        
-        if len(cf_metrics)==0:
-            continue
+        cf = generate_cf(obs=obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
 
         cfs.append(cf)
+        cf_metrics = metrics.copy()
+        if do_s != None:
+            cf_metrics['sex'] = [do_s for _ in range(BATCH_SIZE)]
+        if do_f != None:
+            cf_metrics['finding'] = [do_f for _ in range(BATCH_SIZE)]
+        if do_r != None:
+            cf_metrics['race'] = [do_r for _ in range(BATCH_SIZE)]
+        if do_a != None:
+            cf_metrics['age'] = [do_a for _ in range(BATCH_SIZE)]
+
         cfs_metrics.append(cf_metrics)
 
-        count += 1
+        count += BATCH_SIZE
         if count >= amount:
             return cfs, cfs_metrics
 
