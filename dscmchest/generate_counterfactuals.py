@@ -69,35 +69,45 @@ def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
     dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
-        cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(), 'race':metrics['race'][0].item(), 'finding':target[0].item()}
+        cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(),
+                      'race':metrics['race'][0].item(), 'finding':target[0].item()}
         
         do_inter = False
-        if do_s != None and cf_metrics['sex'] != do_s:
-            do_inter = True
-            cf_metrics['sex'] = do_s
-        if do_f != None and cf_metrics['finding'] != do_f:
-            do_inter = True
-            cf_metrics['finding'] = do_f
-        if do_r != None and cf_metrics['race'] != do_r:
-            do_inter = True
-            cf_metrics['race'] = do_r
-        if do_a != None and not (20*do_a<=cf_metrics['age']<=(20*do_a+19)):
-            do_inter = True
-            cf_metrics['age'] = do_a
-        
-        if not do_inter:
-            continue
-        
-        do_a_post = random.randint(do_a*20, do_a*20+19)
-        cf = generate_cf(obs=obs, do_a=do_a_post, do_f=do_f, do_r=do_r, do_s=do_s)
-        if len(cf)==0:
-            continue
+        if do_s != None:
+            if cf_metrics['sex'] == do_s: continue
+            else:
+                cf_metrics['sex'] = do_s
+                do_inter = True
 
-        cfs.append(cf)
-        cfs_metrics.append(cf_metrics)
+        if do_f != None:
+            if cf_metrics['finding'] == do_f: continue
+            else:
+                cf_metrics['finding'] = do_f
+                do_inter = True
 
-        count += BATCH_SIZE
-        if count >= amount:
-            return cfs, cfs_metrics
+        if do_r != None:
+            if cf_metrics['race'] == do_r: continue
+            else:
+                cf_metrics['race'] = do_r
+                do_inter = True
+
+        if do_a != None:
+            if (20*do_a<=cf_metrics['age']<=(20*do_a+19)): continue
+            else:
+                cf_metrics['age'] = do_a
+                do_inter = True
+        
+        if do_inter:
+            do_a_post = random.randint(do_a*20, do_a*20+19)
+            cf = generate_cf(obs=obs, do_a=do_a_post, do_f=do_f, do_r=do_r, do_s=do_s)
+            if len(cf)==0:
+                continue
+
+            cfs.append(cf)
+            cfs_metrics.append(cf_metrics)
+
+            count += BATCH_SIZE
+            if count >= amount:
+                return cfs, cfs_metrics
 
     return cfs, cfs_metrics
