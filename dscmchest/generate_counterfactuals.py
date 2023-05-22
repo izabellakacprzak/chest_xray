@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import random
 import numpy as np
 
+from dscmchest.pgm_chest.train_pgm import preprocess
 from dscmchest.functions_for_gradio import load_chest_models
 
 model, _, _ = load_chest_models()
@@ -29,12 +30,12 @@ def postprocess(x):
     return ((x + 1.0) * 127.5).detach().cpu().numpy()
     
 def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
-    obs = norm(obs)
-    n_particles = 32 # Number of particles
+    obs = preprocess(norm(obs))
+    n_particles = 1 # Number of particles
    
     for k, v in obs.items():
         obs[k] = v.cuda().float()
-        if n_particles > 1:
+        if n_particles >= 1:
             ndims = (1,)*3 if k == 'x' else (1,)
             obs[k] = obs[k].repeat(n_particles, *ndims)
 
@@ -54,7 +55,7 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
     
     # generate counterfactual
-    out = model.forward(obs, do_pa, cf_particles=1)
+    out = model.forward(obs, do_pa, cf_particles=32)
     if not 'cfs' in out:
         return np.array([])
 
