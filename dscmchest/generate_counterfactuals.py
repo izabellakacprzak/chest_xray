@@ -58,17 +58,17 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     if not 'cfs' in out:
         return np.array([])
 
-    x_cf = postprocess(out['cfs']['x']).mean(1)
+    x_cf = postprocess(out['cfs']['x']).mean(0)
     return x_cf
 
 def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     count = 0
     cfs = []
     cfs_metrics = []
     dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
-        obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
+        obs = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
         cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(),
                       'race':metrics['race'][0].item(), 'finding':target[0].item()}
         
