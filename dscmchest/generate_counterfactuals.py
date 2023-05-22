@@ -30,7 +30,7 @@ def postprocess(x):
     
 def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     obs = norm(obs)
-    n_particles = 1 # Number of particles
+    n_particles = 32 # Number of particles
    
     for k, v in obs.items():
         obs[k] = v.cuda().float()
@@ -54,42 +54,50 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
         do_pa[k] = v.cuda().float().repeat(n_particles, 1)
     
     # generate counterfactual
-    out = model.forward(obs, do_pa, cf_particles=32)
+    out = model.forward(obs, do_pa, cf_particles=1)
     if not 'cfs' in out:
         return np.array([])
 
-    x_cf = postprocess(out['cfs']['x']).mean(0)
+    x_cf = postprocess(out['cfs']['x']).mean(1)
     return x_cf
 
 def generate_cfs(data, amount, do_a=None, do_f=None, do_r=None, do_s=None):
-    BATCH_SIZE = 4
+    BATCH_SIZE = 32
     count = 0
     cfs = []
     cfs_metrics = []
     dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for _, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':target}
-        cf_metrics = {'sex':metrics['sex'].numpy(), 'age':metrics['age'].numpy(),
-                      'race':metrics['race'].numpy(), 'finding':target.numpy()}
+        cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(),
+                      'race':metrics['race'][0].item(), 'finding':target[0].item()}
         
         do_inter = False
         if do_s != None:
-            cf_metrics['sex'] = [do_s for _ in range(BATCH_SIZE)]
-            do_inter = True
+            if cf_metrics['sex'] == do_s: continue
+            else:
+                cf_metrics['sex'] = do_s
+                do_inter = True
 
         if do_f != None:
-            cf_metrics['finding'] = [do_f for _ in range(BATCH_SIZE)]
-            do_inter = True
+            if cf_metrics['finding'] == do_f: continue
+            else:
+                cf_metrics['finding'] = do_f
+                do_inter = True
 
         if do_r != None:
-            cf_metrics['race'] = [do_r for _ in range(BATCH_SIZE)]
-            do_inter = True
+            if cf_metrics['race'] == do_r: continue
+            else:
+                cf_metrics['race'] = do_r
+                do_inter = True
 
         do_a_post = None
         if do_a != None:
-            do_a_post = random.randint(do_a*20, do_a*20+19)
-            cf_metrics['age'] = [do_a_post for _ in range(BATCH_SIZE)]
-            do_inter = True
+            if (20*do_a<=cf_metrics['age']<=(20*do_a+19)): continue
+            else:
+                do_a_post = random.randint(do_a*20, do_a*20+19)
+                cf_metrics['age'] = do_a_post
+                do_inter = True
         
         if do_inter:
             #do_a_post = random.randint(do_a*20, do_a*20+19)
