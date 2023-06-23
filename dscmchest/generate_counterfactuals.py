@@ -1,12 +1,64 @@
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
-from torch.utils.data import DataLoader
 import random
 import numpy as np
 
 from dscmchest.pgm_chest.train_pgm import preprocess
-from dscmchest.functions_for_gradio import load_chest_models
+from dscmchest.pgm_chest.flow_pgm import FlowPGM
+from dscmchest.vae_chest import HVAE
+from dscmchest.pgm_chest.dscm import DSCM
+
+class Hparams:
+    def update(self, dict):
+        for k, v in dict.items():
+            setattr(self, k, v)
+
+def load_chest_models():
+    # Load predictors
+    args = Hparams()
+    args.predictor_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/mimic_classifier_resnet18_l2_slurm/checkpoint.pt'
+    predictor_checkpoint = torch.load(args.predictor_path)
+    args.update(predictor_checkpoint['hparams'])
+    predictor = FlowPGM(args)
+    
+    # Load PGM
+    args.pgm_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/sup_pgm_mimic/checkpoint.pt'
+    # print(f'\nLoading PGM checkpoint: {args.pgm_path}')
+    pgm_checkpoint = torch.load(args.pgm_path)
+    pgm_args = Hparams()
+    pgm_args.update(pgm_checkpoint['hparams'])
+    pgm = FlowPGM(pgm_args)
+    # pgm.load_state_dict(pgm_checkpoint['ema_model_state_dict'])
+
+    args.vae_path = '/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/mimic_beta9_gelu_dgauss_1_lr3/checkpoint.pt'
+
+    # print(f'\nLoading VAE checkpoint: {args.vae_path}')
+    vae_checkpoint = torch.load(args.vae_path)
+    vae_args = Hparams()
+    vae_args.update(vae_checkpoint['hparams'])
+    vae = HVAE(vae_args)
+    # vae.load_state_dict(vae_checkpoint['ema_model_state_dict'])
+
+    args = Hparams()
+    dscm_dir = "mimic_dscm_lr_1e5_lagrange_lr_1_damping_10"
+    # dscm_dir = "mimic_more_dscm_lr_1e5_lagrange_lr_1_damping_10"
+
+    which_checkpoint="6500_checkpoint"
+    args.load_path = f'/homes/iek19/Documents/FYP/chest_xray/checkpoints/a_r_s_f/{dscm_dir}/{which_checkpoint}.pt'
+    # print(args.load_path)
+    dscm_checkpoint = torch.load(args.load_path)
+    args.update(dscm_checkpoint['hparams'])
+    model = DSCM(args, pgm, predictor, vae)
+    args.cf_particles =1
+    model.load_state_dict(dscm_checkpoint['model_state_dict'])
+    args.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model.to(args.device)
+    # Set model require_grad to False
+    for p in model.parameters():
+        p.requires_grad = False
+    del vae, pgm, predictor
+    return model, args, pgm_args
 
 model, _, _ = load_chest_models()
 
