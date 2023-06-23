@@ -59,7 +59,7 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
     if not 'cfs' in out:
         return np.array([])
 
-    x_cf = postprocess(out['cfs']['x']).mean(0)
+    x_cf = postprocess(out['cfs']['x']).mean(1)
     return x_cf
 
 def generate_cfs(dataloader, amount, do_a=None, do_f=None, do_r=None, do_s=None):
@@ -112,5 +112,32 @@ def generate_cfs(dataloader, amount, do_a=None, do_f=None, do_r=None, do_s=None)
             count += BATCH_SIZE
             if count >= amount:
                 return cfs, cfs_metrics, idx
+
+    return cfs, cfs_metrics, -1
+
+def generate_cfs_random(dataloader, amount):
+    BATCH_SIZE = 1
+    count = 0
+    cfs = []
+    cfs_metrics = []
+    for idx, (image, metrics, target) in enumerate(tqdm(dataloader)):
+        obs = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
+        cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(),
+                      'race':metrics['race'][0].item(), 'finding':target[0].item()}
+        
+        cf_metrics['sex'] = random.randint(0,1)
+        # cf_metrics['finding'] = random.randint(0,1)
+        cf_metrics['race'] = random.randint(0,2)
+
+        do_a = random.randint(0,4)
+        cf_metrics['age'] = random.randint(do_a*20, do_a*20+19)
+        
+        cf = generate_cf(obs=obs, do_a=cf_metrics['age'], do_f=cf_metrics['finding'], do_r=cf_metrics['race'], do_s=cf_metrics['sex'])
+        cfs.append(cf)
+        cfs_metrics.append(cf_metrics)
+
+        count += BATCH_SIZE
+        if count >= amount:
+            return cfs, cfs_metrics, idx
 
     return cfs, cfs_metrics, -1
