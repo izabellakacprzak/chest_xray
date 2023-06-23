@@ -91,7 +91,7 @@ def generate_cf(obs, do_a=None, do_f=None, do_r=None, do_s=None):
             ndims = (1,)*3 if k == 'x' else (1,)
             obs[k] = obs[k].repeat(n_particles, *ndims)
 
-    # get founterfactual pa
+    # get counterfactual pa
     do_pa = {}
     with torch.no_grad():
         if do_s != None:
@@ -119,7 +119,6 @@ def generate_cfs(dataloader, amount, do_a=None, do_f=None, do_r=None, do_s=None)
     count = 0
     cfs = []
     cfs_metrics = []
-    #dataloader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=False)
     for idx, (image, metrics, target) in enumerate(tqdm(dataloader)):
         obs = {'x':image[0][0], 'sex':metrics['sex'][0], 'age':metrics['age'][0], 'race':metrics['race'][0], 'finding':target[0]}
         cf_metrics = {'sex':metrics['sex'][0].item(), 'age':metrics['age'][0].item(),
